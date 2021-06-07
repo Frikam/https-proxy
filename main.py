@@ -1,3 +1,4 @@
+import logging
 import socket
 import sys
 import traceback
@@ -5,26 +6,23 @@ from _thread import *
 
 def main():
     global listen_port, buffer_size, max_conn
-    try:
-        listen_port = int(input("Введите прослушиваемый порт: "))
-    except KeyboardInterrupt:
-        sys.exit(0)
 
-    # число соединений и размер буффера
+    listen_port = 3002
+    logging.basicConfig(level=logging.INFO)
+
     max_conn = 5
     buffer_size = 8192
-
-
     try:
         # AF --- AddressFamily, SOCK --- SocketKind
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind(('', listen_port))
         s.listen(max_conn)
-        print("[*] Инициализация сокета... Выполнено.")
-        print("[*] Сокет успешно связан... Выполнено.")
-        print(f'[*] Сервер успешно запущен [{listen_port}]')
+        logging.info("[*] Инициализация сокета... Выполнено.")
+
+        logging.info("[*] Сокет успешно связан... Выполнено.")
+        logging.info(f'[*] Сервер успешно запущен [{listen_port}]')
     except Exception as e:
-        print(e)
+        logging.error(e)
         sys.exit(2)
 
     while True:
@@ -35,7 +33,7 @@ def main():
             start_new_thread(get_data, (conn, data, addr))
         except KeyboardInterrupt:
             s.close()
-            print("\n[*] Выключение сервера")
+            logging.info("\n[*] Выключение сервера")
             sys.exit(1)
 
     s.close()
@@ -47,7 +45,7 @@ def get_data(conn, data, addr):
         method_name = first_line.split(" ")[0][2:]
         url = first_line.split(" ")[1]
 
-        http_index = url.find("://")  
+        http_index = url.find("://")
         if http_index == -1:
             temp = url
         else:
@@ -70,10 +68,11 @@ def get_data(conn, data, addr):
             port = int(temp[(port_start_index + 1):][:webserver_end_index - port_start_index - 1])
             webserver = temp[:port_start_index]
 
-        print(f'Метод {method_name}, адрес сервера {webserver}')
+
+        logging.info(f'Метод {method_name}, адрес сервера {webserver}')
         proxy_server(webserver, port, conn, data, method_name)
     except Exception as e:
-        print(e)
+        logging.error(e)
 
 
 def proxy_server(webserver, port, conn, data, method):
